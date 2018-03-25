@@ -1,7 +1,7 @@
 import numpy as np
 from keras import layers, models, optimizers
 from keras import backend as K
-from keras.regularizers import l2
+from keras.regularizers import l1
 
 import random
 from collections import namedtuple, deque
@@ -30,8 +30,8 @@ class DDPG():
 
         # Noise process
         self.exploration_mu = 0
-        self.exploration_theta = 0.05
-        self.exploration_sigma = 0.1
+        self.exploration_theta = 0.015
+        self.exploration_sigma = 0.02
         self.noise = OUNoise(self.action_size, self.exploration_mu, self.exploration_theta, self.exploration_sigma)
 
         # Replay memory
@@ -41,7 +41,7 @@ class DDPG():
 
         # Algorithm parameters
         self.gamma = 0.99  # discount factor
-        self.tau = 0.0015  # for soft update of target parameters
+        self.tau = 0.002  # for soft update of target parameters
 
         # score recording
         self.total_reward = 0.0
@@ -139,11 +139,10 @@ class OUNoise:
         self.state = x + dx
         return self.state
 
-
 class Actor:
     """Actor (Policy) Model."""
 
-    def __init__(self, state_size, action_size, action_low, action_high, actor_learn_rate=0.00005):
+    def __init__(self, state_size, action_size, action_low, action_high, actor_learn_rate=0.0005):
         """Initialize parameters and build model.
         Params
         ======
@@ -169,15 +168,15 @@ class Actor:
         states = layers.Input(shape=(self.state_size,), name='states')
 
         # Add hidden layers
-        net = layers.Dense(200, activation=None, W_regularizer=l2(0.01), init='normal')(states)
+        net = layers.Dense(100, activation=None, W_regularizer=l1(0.01), init='normal')(states)
         net = layers.BatchNormalization()(net)
         net = layers.Activation('relu')(net)
         net = layers.Dropout(0.5)(net)
-        net = layers.Dense(400, activation=None, W_regularizer=l2(0.01), init='normal')(net)
+        net = layers.Dense(200, activation=None, W_regularizer=l1(0.01), init='normal')(net)
         net = layers.BatchNormalization()(net)
         net = layers.Activation('relu')(net)
         net = layers.Dropout(0.5)(net)
-        net = layers.Dense(200, activation=None, W_regularizer=l2(0.01), init='normal')(net)
+        net = layers.Dense(100, activation=None, W_regularizer=l1(0.01), init='normal')(net)
         net = layers.BatchNormalization()(net)
         net = layers.Activation('relu')(net)
         net = layers.Dropout(0.5)(net)
@@ -213,7 +212,7 @@ class Actor:
 class Critic:
     """Critic (Value) Model."""
 
-    def __init__(self, state_size, action_size, critic_learn_rate=0.0005):
+    def __init__(self, state_size, action_size, critic_learn_rate=0.001):
         """Initialize parameters and build model.
 
         Params
@@ -237,18 +236,18 @@ class Critic:
         actions = layers.Input(shape=(self.action_size,), name='actions')
 
         # Add hidden layer(s) for state pathway
-        net_states = layers.Dense(200, activation=None, W_regularizer=l2(0.01), init='normal')(states)
+        net_states = layers.Dense(100, activation=None, W_regularizer=l1(0.01), init='normal')(states)
         net_states = layers.BatchNormalization()(net_states)
         net_states = layers.Activation('relu')(net_states)
         net_states = layers.Dropout(0.5)(net_states)
-        net_states = layers.Dense(400, activation=None, W_regularizer=l2(0.01), init='normal')(net_states)
+        net_states = layers.Dense(200, activation=None, W_regularizer=l1(0.01), init='normal')(net_states)
 
         # Add hidden layer(s) for action pathway
-        net_actions = layers.Dense(200, activation=None, W_regularizer=l2(0.01), init='normal')(actions)
+        net_actions = layers.Dense(100, activation=None, W_regularizer=l1(0.01), init='normal')(actions)
         net_actions = layers.BatchNormalization()(net_actions)
         net_actions = layers.Activation('relu')(net_actions)
         net_actions = layers.Dropout(0.5)(net_actions)
-        net_actions = layers.Dense(400, activation=None, W_regularizer=l2(0.01), init='normal')(net_actions)
+        net_actions = layers.Dense(200, activation=None, W_regularizer=l1(0.01), init='normal')(net_actions)
 
         # Try different layer sizes, activations, add batch normalization, regularizers, etc.
 
